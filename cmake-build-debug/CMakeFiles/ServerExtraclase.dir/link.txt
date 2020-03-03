@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/ServerExtraclase.dir/main.cpp.o  -o ServerExtraclase 
