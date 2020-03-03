@@ -5,120 +5,84 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define N_NODES 6
 
-typedef struct _node _node;
-typedef struct _edge _edge;
+#include <iostream>
 
-struct _node{
-    _edge *edge;
-    _node *destiny;
-    double distance;
-    char name[8];
-    int heap_idx;  //heap position on cost updating
+#include <list>
+
+using namespace std;
+
+/*!
+ * @brief This class represents a directed graph using adjacency list representation
+ */
+class Graph
+{
+    int V;      // Number of vertices
+    list<int> *adj; // Pointer to an array containing adjacency lists
+public:
+    Graph(int V);
+    void addEdge(int v, int w); // add an edge to graph
+    bool isReachable(int source, int destiny); // returns true if there is a path from source to destiny
 };
-
-struct _edge{
-    _edge *sibling;
-    _node *nd;
-    int cost;
-
-};
-
-#define BLOCK_SIZE 15
-_edge *edge_root = 0, *edge_next = 0;
-
-void add_edge(_node *node1, _node *node2, double c ){
-    if(edge_next == edge_root){
-        edge_root = (_edge*)malloc(sizeof(_edge)*(BLOCK_SIZE+1));
-        edge_root[BLOCK_SIZE].sibling = edge_next;
-        edge_next = edge_root+BLOCK_SIZE;
-    }
-    --edge_next;
-
-    edge_next->nd = node2;
-    edge_next->cost = c;
-    edge_next->sibling = node1->edge;
-    node1->edge = edge_next;
+Graph::Graph(int V){
+    this->V = V;
+    adj = new list<int> [V];
+}
+void Graph::addEdge(int v, int w){
+    adj[v].push_back(w); // Add w to v’s list.
 }
 
-void free_edges(){
-    for( ; edge_root; edge_root = edge_next){
-        edge_next = edge_root[BLOCK_SIZE].sibling;
-        free(edge_root);
-    }
-}
-
-_node **heap;
-int heap_len;
-
-void set_distance(_node *nd, _node *destiny, double d){
-    int i,j;
-
-    if(nd->destiny && d >= nd->distance)return;
-
-    //Crear o buscar entrada al heap
-    nd->distance = d;
-    nd->destiny = destiny;
-    i = nd->heap_idx;
-    if(!i)i = ++heap_len;
-
-    for(; i>1 && nd->distance < heap[j=i/2]->distance; i=j)
-        (heap[i]=heap[j])->heap_idx=i;
-
-    heap[i]=nd;
-    nd->heap_idx=i;
-}
-
-_node *pop_queue(){
-    _node *nd, *tmp;
-    int i,j;
-
-    if(!heap_len)return 0;
-    //remove lead element, pull tail on lead and downheap
-    nd=heap[1];
-    tmp=heap[heap_len--];
-
-    for(i=1; i<heap_len && (j=i*2)<= heap_len; i=j){
-        if( j< heap_len && heap[j]->distance > heap[j+1]->distance) j++;
-        if( heap[j]->distance >= tmp->distance) break;
-
-        (heap[i]=heap[j])->heap_idx = i;
+/*!
+ * @brief Dijkstra
+ * @param int s, int d
+ */
+//
+bool Graph::isReachable(int s, int d){
+    // Base case
+    if (s == d)
+        return true;
+    bool *visited = new bool[V]; // Mark all the vertices as not visited
+    for (int i = 0; i < V; i++)
+        visited[i] = false;
+    // Create a queue for BFS
+    list<int> queue;
+    visited[s] = true;  // Mark the current node as visited and enqueue it
+    queue.push_back(s);
+    // it will be used to get all adjacent vertices of a vertex
+    list<int>::iterator i;
+    while (!queue.empty()){
+        // Dequeue a vertex from queue and print it
+        s = queue.front();
+        queue.pop_front();
+        // Get all adjacent vertices of the dequeued vertex s
+        // If a adjacent has not been visited, then mark it visited
+        // and enqueue it
+        for (i = adj[s].begin(); i != adj[s].end(); ++i){
+            // If this adjacent node is the destination node, then return true
+            if (*i == d)
+                return true;
+            // Else, continue to do BFS
+            if (!visited[*i]){
+                visited[*i] = true;
+                queue.push_back(*i);
+            }
+        }
     }
 
-    heap[i]=tmp;
-    tmp-> heap_idx=i;
-
-    return nd;
-}
-
-void calc_dijkstra(_node *start){
-    _node *lead;
-    _edge *edgie;
-
-    set_distance(start,start,0);
-    while((lead=pop_queue()))
-        for (edgie = lead->edge; edgie; edgie= edgie->sibling)
-            set_distance(edgie->nd, lead, lead->distance + edgie->cost);
+    return false;
 
 }
-
-void showme_path(_node *nd){
-    if(nd->destiny == nd)
-        printf("%s", nd->name);
-    else if(!nd->destiny)
-        printf("%s(unreached node) ", nd->name);
-    else{
-        showme_path(nd->destiny);
-        printf("-> %s(%g) ", nd->name, nd->distance );
-    }
-}
-
+/*!
+ * @brief error server socket
+ */
 void error(const char *msg){
     perror(msg);
     exit(1);
 }
 
+/*!
+ * @brief Server socket and calculing djkstra
+ */
 int main(int argc, char *argv[]) {
     int socketON, portnumber, newsocketON, thereading;
     struct sockaddr_in server_addr{},client_addr{};
@@ -155,28 +119,17 @@ int main(int argc, char *argv[]) {
 
     printf("Checking SERVER connection: got connection from %s port %d \n",inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-    //Dojkstra
-    _node *nodes = (_node*) calloc(sizeof(_node), N_NODES);
-    for (int i = 0; i < N_NODES; i++)
-        sprintf(nodes[i].name, "%c", 'a' + i);
-
-    add_edge(nodes,   nodes+1,  7);   //a-b
-    add_edge(nodes,   nodes+2,  9);   //a-c
-    add_edge(nodes,   nodes+5, 14);   //a-f
-    add_edge(nodes+1, nodes+2, 10);   //b-c
-    add_edge(nodes+1, nodes+3, 15);   //b-d
-    add_edge(nodes+2, nodes+3, 11);   //c-d
-    add_edge(nodes+2, nodes+5,  2);   //c-f
-    add_edge(nodes+3, nodes+4,  6);   //d-e
-    add_edge(nodes+4, nodes+5,  9);   //e-f
-
-    heap = (_node**)calloc(sizeof(_node), N_NODES + 1);
-    heap_len = 0;
-
-    calc_dijkstra(nodes);
-
     //Sending data
-    send(newsocketON, nodes,14636,0);
+    Graph g(4);
+
+    g.addEdge(0, 1);
+    g.addEdge(0, 2);
+    g.addEdge(1, 2);
+    g.addEdge(2, 0);
+    g.addEdge(2, 3);
+    g.addEdge(3, 3);
+
+    send(newsocketON, "Result djkstra be here",100,0);
 
     //Reading data
     bzero(buffer,256);
