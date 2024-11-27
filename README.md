@@ -26,3 +26,18 @@ El programa principal crea un servidor que escucha en un puerto especificado. Ut
 1. Compila el código:
    ```sh
    g++ -o graph_server graph_server.cpp
+
+
+## Ejecutar servidor
+
+./graph_server <puerto>
+
+## Requisitos
+Compilador compatible con C++ (por ejemplo, g++).
+
+Sistema operativo compatible con sockets (por ejemplo, Linux).
+
+## Notas
+Asegúrate de proporcionar un puerto válido al ejecutar el servidor.
+
+El servidor puede manejar múltiples conexiones de clientes, pero este ejemplo no implementa concurrencia.

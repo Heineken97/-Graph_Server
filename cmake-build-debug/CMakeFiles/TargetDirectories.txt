@@ -1,3 +1,0 @@
-/home/heineken97/CLionProjects/ServerExtraclase/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/heineken97/CLionProjects/ServerExtraclase/cmake-build-debug/CMakeFiles/ServerExtraclase.dir
-/home/heineken97/CLionProjects/ServerExtraclase/cmake-build-debug/CMakeFiles/edit_cache.dir
