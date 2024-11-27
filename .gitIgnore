@@ -1,0 +1,29 @@
+# Ignorar archivos de compilación
+*.o
+*.out
+*.log
+
+# Ignorar directorios de compilación
+/build/
+/bin/
+/obj/
+
+# Ignorar archivos de configuración de IDE
+*.iml
+.idea/
+.vscode/
+
+# Ignorar archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos temporales
+*.tmp
+*.temp
+*.swp
+
+# Ignorar archivos de registro
+*.log
+
+# Ignorar archivos de configuración específicos del entorno
+.env
